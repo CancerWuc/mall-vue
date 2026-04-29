@@ -7,6 +7,16 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
+  const apiTarget = env.VITE_API_TARGET || 'http://localhost:8090'
+  let rewriteApiPrefix = env.VITE_API_REWRITE !== 'false'
+  if (!env.VITE_API_REWRITE) {
+    try {
+      rewriteApiPrefix = new URL(apiTarget).port !== '88'
+    } catch {
+      rewriteApiPrefix = true
+    }
+  }
+
   return {
     base: '/',
     resolve: {
@@ -29,9 +39,9 @@ export default defineConfig(({ mode }) => {
       open: true,
       proxy: {
         '/api': {
-          target: env.VITE_API_TARGET || 'http://localhost:8090',
+          target: apiTarget,
           changeOrigin: true,
-          rewrite: (p) => p.replace(/^\/api/, '')
+          ...(rewriteApiPrefix ? { rewrite: (p) => p.replace(/^\/api/, '') } : {})
         }
       }
     }
