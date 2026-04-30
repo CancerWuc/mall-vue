@@ -38,6 +38,11 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       open: true,
       proxy: {
+        '/api/product': {
+          target: env.VITE_PRODUCT_API_TARGET || 'http://localhost:11000',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api/, '')
+        },
         '/api': {
           target: apiTarget,
           changeOrigin: true,

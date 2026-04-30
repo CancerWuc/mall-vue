@@ -36,6 +36,104 @@ export const constantRoutes = [
 // 业务路由：受权限保护，登录后挂载到 Layout 下
 export const asyncRoutes = [
   {
+    path: '/product',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/product/category',
+    meta: { title: '商品管理', icon: 'Goods' },
+    children: [
+      {
+        path: 'category',
+        name: 'ProductCategory',
+        component: () => import('@/views/product/CategoryTree.vue'),
+        meta: { title: '商品分类', icon: 'Grid', productKey: 'category' }
+      },
+      {
+        path: 'brand',
+        name: 'ProductBrand',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '品牌管理', icon: 'PriceTag', productKey: 'brand' }
+      },
+      {
+        path: 'attr-group',
+        name: 'ProductAttrGroup',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '属性分组', icon: 'CollectionTag', productKey: 'attrgroup' }
+      },
+      {
+        path: 'attr',
+        name: 'ProductAttr',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '商品属性', icon: 'SetUp', productKey: 'attr' }
+      },
+      {
+        path: 'attr-relation',
+        name: 'ProductAttrRelation',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '属性关联', icon: 'Connection', productKey: 'attrattrgrouprelation' }
+      },
+      {
+        path: 'category-brand',
+        name: 'ProductCategoryBrand',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '分类品牌', icon: 'Link', productKey: 'categorybrandrelation' }
+      },
+      {
+        path: 'spu',
+        name: 'ProductSpu',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SPU 管理', icon: 'Box', productKey: 'spuinfo' }
+      },
+      {
+        path: 'sku',
+        name: 'ProductSku',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SKU 管理', icon: 'Tickets', productKey: 'skuinfo' }
+      },
+      {
+        path: 'spu-attr-value',
+        name: 'ProductAttrValue',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SPU 属性值', icon: 'List', productKey: 'productattrvalue' }
+      },
+      {
+        path: 'spu-desc',
+        name: 'ProductSpuDesc',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SPU 介绍', icon: 'Document', productKey: 'spuinfodesc' }
+      },
+      {
+        path: 'spu-images',
+        name: 'ProductSpuImages',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SPU 图片', icon: 'Picture', productKey: 'spuimages' }
+      },
+      {
+        path: 'sku-images',
+        name: 'ProductSkuImages',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SKU 图片', icon: 'PictureFilled', productKey: 'skuimages' }
+      },
+      {
+        path: 'sku-sale-attr',
+        name: 'ProductSkuSaleAttr',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: 'SKU 销售属性', icon: 'Sell', productKey: 'skusaleattrvalue' }
+      },
+      {
+        path: 'comment',
+        name: 'ProductComment',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '商品评价', icon: 'ChatDotRound', productKey: 'spucomment' }
+      },
+      {
+        path: 'comment-replay',
+        name: 'ProductCommentReplay',
+        component: () => import('@/views/product/ProductCrud.vue'),
+        meta: { title: '评价回复', icon: 'ChatLineRound', productKey: 'commentreplay' }
+      }
+    ]
+  },
+  {
     path: '/system',
     component: () => import('@/layout/index.vue'),
     redirect: '/system/user',
