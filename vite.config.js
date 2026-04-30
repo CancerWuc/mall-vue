@@ -43,6 +43,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api/, '')
         },
+        '/api/ware': {
+          target: env.VITE_WARE_API_TARGET || 'http://localhost:12000',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api/, '')
+        },
         '/api': {
           target: apiTarget,
           changeOrigin: true,

@@ -41,7 +41,7 @@ export const productConfigs = {
     tableFields: [
       field('catId', 'ID', { width: 90 }),
       field('name', '分类名称', { minWidth: 160 }),
-      field('parentCid', '父分类ID', { width: 110 }),
+      field('parentName', '父分类名称', { minWidth: 140 }),
       field('catLevel', '层级', { width: 80 }),
       field('showStatus', '显示', { width: 90, type: 'tag', options: showOptions }),
       field('sort', '排序', { width: 80 }),
@@ -76,7 +76,7 @@ export const productConfigs = {
     ],
     formFields: [
       field('name', '品牌名', { required: true }),
-      field('logo', 'Logo 地址'),
+      field('logo', 'Logo', { type: 'oss-image', span: 2 }),
       field('firstLetter', '检索首字母'),
       field('showStatus', '是否显示', { type: 'switch', defaultValue: 1 }),
       field('sort', '排序', { type: 'number', defaultValue: 0 }),
@@ -92,14 +92,14 @@ export const productConfigs = {
     tableFields: [
       field('attrGroupId', 'ID', { width: 90 }),
       field('attrGroupName', '组名', { minWidth: 160 }),
-      field('catelogId', '分类ID', { width: 110 }),
+      field('catelogName', '分类名称', { minWidth: 140 }),
       field('sort', '排序', { width: 80 }),
       field('icon', '图标', { minWidth: 180, showOverflowTooltip: true }),
       field('descript', '描述', { minWidth: 220, showOverflowTooltip: true })
     ],
     formFields: [
       field('attrGroupName', '组名', { required: true }),
-      field('catelogId', '所属分类ID', { type: 'number' }),
+      field('catelogId', '所属分类', { type: 'category' }),
       field('sort', '排序', { type: 'number', defaultValue: 0 }),
       field('icon', '组图标'),
       field('descript', '描述', { type: 'textarea', span: 2 })
@@ -114,7 +114,7 @@ export const productConfigs = {
     tableFields: [
       field('attrId', 'ID', { width: 90 }),
       field('attrName', '属性名', { minWidth: 150 }),
-      field('catelogId', '分类ID', { width: 110 }),
+      field('catelogName', '分类名称', { minWidth: 140 }),
       field('attrType', '属性类型', { width: 120, type: 'tag', options: attrTypeOptions }),
       field('valueType', '值类型', { width: 90, type: 'tag', options: valueTypeOptions }),
       field('searchType', '检索', { width: 90, type: 'tag', options: yesNoOptions }),
@@ -124,7 +124,7 @@ export const productConfigs = {
     ],
     formFields: [
       field('attrName', '属性名', { required: true }),
-      field('catelogId', '所属分类ID', { type: 'number' }),
+      field('catelogId', '所属分类', { type: 'category' }),
       field('attrType', '属性类型', { type: 'select', options: attrTypeOptions, defaultValue: 1 }),
       field('valueType', '值类型', { type: 'select', options: valueTypeOptions, defaultValue: 0 }),
       field('searchType', '是否检索', { type: 'switch', defaultValue: 0 }),
@@ -141,8 +141,8 @@ export const productConfigs = {
     idField: 'id',
     tableFields: [
       field('id', 'ID', { width: 90 }),
-      field('attrId', '属性ID', { width: 120 }),
-      field('attrGroupId', '分组ID', { width: 120 }),
+      field('attrName', '属性名称', { minWidth: 150 }),
+      field('attrGroupName', '分组名称', { minWidth: 150 }),
       field('attrSort', '排序', { width: 90 })
     ],
     formFields: [
@@ -158,15 +158,12 @@ export const productConfigs = {
     idField: 'id',
     tableFields: [
       field('id', 'ID', { width: 90 }),
-      field('brandId', '品牌ID', { width: 120 }),
-      field('brandName', '品牌名', { minWidth: 150 }),
-      field('catelogId', '分类ID', { width: 120 }),
-      field('catelogName', '分类名', { minWidth: 150 })
+      field('brandName', '品牌名称', { minWidth: 150 }),
+      field('catelogName', '分类名称', { minWidth: 150 })
     ],
     formFields: [
-      field('brandId', '品牌ID', { type: 'number', required: true }),
-      field('brandName', '品牌名'),
-      field('catelogId', '分类ID', { type: 'number', required: true }),
+      field('brandId', '品牌名称', { type: 'brand', required: true, nameProp: 'brandName' }),
+      field('catelogId', '所属分类', { type: 'category', required: true }),
       field('catelogName', '分类名')
     ]
   },
@@ -179,8 +176,8 @@ export const productConfigs = {
     tableFields: [
       field('id', 'ID', { width: 90 }),
       field('spuName', '商品名称', { minWidth: 180 }),
-      field('catalogId', '分类ID', { width: 110 }),
-      field('brandId', '品牌ID', { width: 110 }),
+      field('catalogName', '分类名称', { minWidth: 140 }),
+      field('brandName', '品牌名称', { minWidth: 140 }),
       field('weight', '重量', { width: 100 }),
       field('publishStatus', '状态', { width: 90, type: 'tag', options: publishOptions }),
       field('createTime', '创建时间', { width: 170 }),
@@ -188,8 +185,8 @@ export const productConfigs = {
     ],
     formFields: [
       field('spuName', '商品名称', { required: true }),
-      field('catalogId', '分类ID', { type: 'number' }),
-      field('brandId', '品牌ID', { type: 'number' }),
+      field('catalogId', '所属分类', { type: 'category' }),
+      field('brandId', '品牌名称', { type: 'brand', nameProp: 'brandName' }),
       field('weight', '重量', { type: 'number', precision: 2, defaultValue: 0 }),
       field('publishStatus', '上架状态', { type: 'select', options: publishOptions, defaultValue: 0 }),
       field('spuDescription', '商品描述', { type: 'textarea', span: 2 })
@@ -206,20 +203,29 @@ export const productConfigs = {
       field('skuDefaultImg', '默认图', { width: 100, type: 'image' }),
       field('skuName', 'SKU 名称', { minWidth: 180 }),
       field('skuTitle', '标题', { minWidth: 200, showOverflowTooltip: true }),
-      field('spuId', 'SPU ID', { width: 110 }),
-      field('catalogId', '分类ID', { width: 110 }),
-      field('brandId', '品牌ID', { width: 110 }),
+      field('spuName', 'SPU 名称', { minWidth: 180 }),
+      field('catalogName', '分类名称', { minWidth: 140 }),
+      field('brandName', '品牌名称', { minWidth: 140 }),
       field('price', '价格', { width: 110 }),
       field('saleCount', '销量', { width: 90 })
     ],
     formFields: [
       field('skuName', 'SKU 名称', { required: true }),
-      field('spuId', 'SPU ID', { type: 'number' }),
-      field('catalogId', '分类ID', { type: 'number' }),
-      field('brandId', '品牌ID', { type: 'number' }),
+      field('spuId', 'SPU 名称', {
+        type: 'spu',
+        nameProp: 'spuName',
+        linkedFields: {
+          catalogId: 'catalogId',
+          catalogName: 'catalogName',
+          brandId: 'brandId',
+          brandName: 'brandName'
+        }
+      }),
+      field('catalogId', '所属分类', { type: 'category', disabled: true }),
+      field('brandId', '品牌名称', { type: 'brand', nameProp: 'brandName', disabled: true }),
       field('price', '价格', { type: 'number', precision: 2, defaultValue: 0 }),
       field('saleCount', '销量', { type: 'number', defaultValue: 0 }),
-      field('skuDefaultImg', '默认图片'),
+      field('skuDefaultImg', '默认图片', { type: 'oss-image', span: 2 }),
       field('skuTitle', '标题', { span: 2 }),
       field('skuSubtitle', '副标题', { span: 2 }),
       field('skuDesc', '介绍描述', { type: 'textarea', span: 2 })
@@ -232,60 +238,19 @@ export const productConfigs = {
     idField: 'id',
     tableFields: [
       field('id', 'ID', { width: 90 }),
-      field('spuId', 'SPU ID', { width: 110 }),
-      field('attrId', '属性ID', { width: 110 }),
+      field('spuName', 'SPU 名称', { minWidth: 180 }),
       field('attrName', '属性名', { minWidth: 150 }),
       field('attrValue', '属性值', { minWidth: 180, showOverflowTooltip: true }),
       field('attrSort', '排序', { width: 90 }),
       field('quickShow', '快速展示', { width: 110, type: 'tag', options: yesNoOptions })
     ],
     formFields: [
-      field('spuId', 'SPU ID', { type: 'number', required: true }),
+      field('spuId', 'SPU 名称', { type: 'spu', required: true, nameProp: 'spuName' }),
       field('attrId', '属性ID', { type: 'number', required: true }),
       field('attrName', '属性名'),
       field('attrValue', '属性值'),
       field('attrSort', '排序', { type: 'number', defaultValue: 0 }),
       field('quickShow', '快速展示', { type: 'switch', defaultValue: 0 })
-    ]
-  },
-  spuimages: {
-    title: 'SPU 图片',
-    resource: 'spuimages',
-    infoKey: 'spuImages',
-    idField: 'id',
-    tableFields: [
-      field('id', 'ID', { width: 90 }),
-      field('imgUrl', '图片', { width: 100, type: 'image' }),
-      field('spuId', 'SPU ID', { width: 110 }),
-      field('imgName', '图片名', { minWidth: 160 }),
-      field('imgSort', '排序', { width: 90 }),
-      field('defaultImg', '默认图', { width: 100, type: 'tag', options: yesNoOptions })
-    ],
-    formFields: [
-      field('spuId', 'SPU ID', { type: 'number', required: true }),
-      field('imgName', '图片名'),
-      field('imgUrl', '图片地址', { required: true, span: 2 }),
-      field('imgSort', '排序', { type: 'number', defaultValue: 0 }),
-      field('defaultImg', '默认图', { type: 'switch', defaultValue: 0 })
-    ]
-  },
-  skuimages: {
-    title: 'SKU 图片',
-    resource: 'skuimages',
-    infoKey: 'skuImages',
-    idField: 'id',
-    tableFields: [
-      field('id', 'ID', { width: 90 }),
-      field('imgUrl', '图片', { width: 100, type: 'image' }),
-      field('skuId', 'SKU ID', { width: 110 }),
-      field('imgSort', '排序', { width: 90 }),
-      field('defaultImg', '默认图', { width: 100, type: 'tag', options: yesNoOptions })
-    ],
-    formFields: [
-      field('skuId', 'SKU ID', { type: 'number', required: true }),
-      field('imgUrl', '图片地址', { required: true, span: 2 }),
-      field('imgSort', '排序', { type: 'number', defaultValue: 0 }),
-      field('defaultImg', '默认图', { type: 'switch', defaultValue: 0 })
     ]
   },
   skusaleattrvalue: {
@@ -295,8 +260,7 @@ export const productConfigs = {
     idField: 'id',
     tableFields: [
       field('id', 'ID', { width: 90 }),
-      field('skuId', 'SKU ID', { width: 110 }),
-      field('attrId', '属性ID', { width: 110 }),
+      field('skuName', 'SKU 名称', { minWidth: 180 }),
       field('attrName', '属性名', { minWidth: 150 }),
       field('attrValue', '属性值', { minWidth: 180 }),
       field('attrSort', '排序', { width: 90 })
@@ -307,20 +271,6 @@ export const productConfigs = {
       field('attrName', '属性名'),
       field('attrValue', '属性值'),
       field('attrSort', '排序', { type: 'number', defaultValue: 0 })
-    ]
-  },
-  spuinfodesc: {
-    title: 'SPU 介绍',
-    resource: 'spuinfodesc',
-    infoKey: 'spuInfoDesc',
-    idField: 'spuId',
-    tableFields: [
-      field('spuId', 'SPU ID', { width: 110 }),
-      field('description', '介绍', { minWidth: 320, showOverflowTooltip: true })
-    ],
-    formFields: [
-      field('spuId', 'SPU ID', { type: 'number', required: true }),
-      field('description', '介绍', { type: 'textarea', span: 2, required: true })
     ]
   },
   spucomment: {
@@ -342,8 +292,7 @@ export const productConfigs = {
     ],
     formFields: [
       field('skuId', 'SKU ID', { type: 'number' }),
-      field('spuId', 'SPU ID', { type: 'number' }),
-      field('spuName', '商品名'),
+      field('spuId', '商品名', { type: 'spu', nameProp: 'spuName' }),
       field('memberNickName', '会员昵称'),
       field('star', '评分', { type: 'number', defaultValue: 5 }),
       field('showStatus', '是否显示', { type: 'switch', defaultValue: 1 }),
@@ -364,8 +313,8 @@ export const productConfigs = {
     idField: 'id',
     tableFields: [
       field('id', 'ID', { width: 90 }),
-      field('commentId', '评价ID', { width: 120 }),
-      field('replyId', '回复ID', { width: 120 })
+      field('commentContent', '评价内容', { minWidth: 220, showOverflowTooltip: true }),
+      field('replyContent', '回复内容', { minWidth: 220, showOverflowTooltip: true })
     ],
     formFields: [
       field('commentId', '评价ID', { type: 'number', required: true }),

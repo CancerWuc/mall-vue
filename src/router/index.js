@@ -1,5 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+const ResourceCrud = () => import('@/views/product/ProductCrud.vue')
+const CategoryTree = () => import('@/views/product/CategoryTree.vue')
+const ProductPublish = () => import('@/views/product/ProductPublish.vue')
+
+const legacyProductRedirects = [
+  { path: '/product/category', redirect: '/category/list', meta: { hidden: true } },
+  { path: '/product/brand', redirect: '/category/brand', meta: { hidden: true } },
+  { path: '/product/category-brand', redirect: '/category/category-brand', meta: { hidden: true } },
+  { path: '/product/attr-group', redirect: '/attribute/group', meta: { hidden: true } },
+  { path: '/product/attr', redirect: '/attribute/list', meta: { hidden: true } },
+  { path: '/product/attr-relation', redirect: '/attribute/relation', meta: { hidden: true } },
+  { path: '/product/spu-attr-value', redirect: '/attribute/spu-value', meta: { hidden: true } },
+  { path: '/product/sku-sale-attr', redirect: '/attribute/sku-sale', meta: { hidden: true } }
+]
+
 // 静态路由：所有不需要权限或必备路由
 export const constantRoutes = [
   {
@@ -36,100 +51,208 @@ export const constantRoutes = [
 // 业务路由：受权限保护，登录后挂载到 Layout 下
 export const asyncRoutes = [
   {
-    path: '/product',
+    path: '/category',
     component: () => import('@/layout/index.vue'),
-    redirect: '/product/category',
-    meta: { title: '商品管理', icon: 'Goods' },
+    redirect: '/category/list',
+    meta: { title: '分类管理', icon: 'Grid' },
     children: [
       {
-        path: 'category',
-        name: 'ProductCategory',
-        component: () => import('@/views/product/CategoryTree.vue'),
-        meta: { title: '商品分类', icon: 'Grid', productKey: 'category' }
+        path: 'list',
+        name: 'CategoryList',
+        component: CategoryTree,
+        meta: { title: '商品分类', icon: 'Grid', moduleKey: 'product', resourceKey: 'category', apiBase: 'product' }
       },
       {
         path: 'brand',
-        name: 'ProductBrand',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '品牌管理', icon: 'PriceTag', productKey: 'brand' }
-      },
-      {
-        path: 'attr-group',
-        name: 'ProductAttrGroup',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '属性分组', icon: 'CollectionTag', productKey: 'attrgroup' }
-      },
-      {
-        path: 'attr',
-        name: 'ProductAttr',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '商品属性', icon: 'SetUp', productKey: 'attr' }
-      },
-      {
-        path: 'attr-relation',
-        name: 'ProductAttrRelation',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '属性关联', icon: 'Connection', productKey: 'attrattrgrouprelation' }
+        name: 'CategoryBrand',
+        component: ResourceCrud,
+        meta: { title: '品牌管理', icon: 'PriceTag', moduleKey: 'product', resourceKey: 'brand', apiBase: 'product' }
       },
       {
         path: 'category-brand',
-        name: 'ProductCategoryBrand',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '分类品牌', icon: 'Link', productKey: 'categorybrandrelation' }
+        name: 'CategoryBrandRelation',
+        component: ResourceCrud,
+        meta: {
+          title: '分类品牌',
+          icon: 'Link',
+          moduleKey: 'product',
+          resourceKey: 'categorybrandrelation',
+          apiBase: 'product'
+        }
+      }
+    ]
+  },
+  {
+    path: '/attribute',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/attribute/group',
+    meta: { title: '属性管理', icon: 'CollectionTag' },
+    children: [
+      {
+        path: 'group',
+        name: 'AttributeGroup',
+        component: ResourceCrud,
+        meta: {
+          title: '属性分组',
+          icon: 'CollectionTag',
+          moduleKey: 'product',
+          resourceKey: 'attrgroup',
+          apiBase: 'product'
+        }
+      },
+      {
+        path: 'list',
+        name: 'AttributeList',
+        component: ResourceCrud,
+        meta: { title: '商品属性', icon: 'SetUp', moduleKey: 'product', resourceKey: 'attr', apiBase: 'product' }
+      },
+      {
+        path: 'relation',
+        name: 'AttributeRelation',
+        component: ResourceCrud,
+        meta: {
+          title: '属性关联',
+          icon: 'Connection',
+          moduleKey: 'product',
+          resourceKey: 'attrattrgrouprelation',
+          apiBase: 'product'
+        }
+      },
+      {
+        path: 'spu-value',
+        name: 'AttributeSpuValue',
+        component: ResourceCrud,
+        meta: {
+          title: 'SPU 属性值',
+          icon: 'List',
+          moduleKey: 'product',
+          resourceKey: 'productattrvalue',
+          apiBase: 'product'
+        }
+      },
+      {
+        path: 'sku-sale',
+        name: 'AttributeSkuSale',
+        component: ResourceCrud,
+        meta: {
+          title: 'SKU 销售属性',
+          icon: 'Sell',
+          moduleKey: 'product',
+          resourceKey: 'skusaleattrvalue',
+          apiBase: 'product'
+        }
+      }
+    ]
+  },
+  {
+    path: '/inventory',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/inventory/stock',
+    meta: { title: '库存管理', icon: 'House' },
+    children: [
+      {
+        path: 'stock',
+        name: 'InventoryStock',
+        component: ResourceCrud,
+        meta: { title: '商品库存', icon: 'Box', moduleKey: 'ware', resourceKey: 'waresku', apiBase: 'ware' }
+      },
+      {
+        path: 'warehouse',
+        name: 'InventoryWarehouse',
+        component: ResourceCrud,
+        meta: { title: '仓库信息', icon: 'OfficeBuilding', moduleKey: 'ware', resourceKey: 'wareinfo', apiBase: 'ware' }
+      },
+      {
+        path: 'purchase',
+        name: 'InventoryPurchase',
+        component: ResourceCrud,
+        meta: { title: '采购单', icon: 'ShoppingCart', moduleKey: 'ware', resourceKey: 'purchase', apiBase: 'ware' }
+      },
+      {
+        path: 'purchase-detail',
+        name: 'InventoryPurchaseDetail',
+        component: ResourceCrud,
+        meta: {
+          title: '采购明细',
+          icon: 'Tickets',
+          moduleKey: 'ware',
+          resourceKey: 'purchasedetail',
+          apiBase: 'ware'
+        }
+      },
+      {
+        path: 'task',
+        name: 'InventoryTask',
+        component: ResourceCrud,
+        meta: {
+          title: '库存工作单',
+          icon: 'DocumentChecked',
+          moduleKey: 'ware',
+          resourceKey: 'wareordertask',
+          apiBase: 'ware'
+        }
+      },
+      {
+        path: 'task-detail',
+        name: 'InventoryTaskDetail',
+        component: ResourceCrud,
+        meta: {
+          title: '工作单明细',
+          icon: 'Document',
+          moduleKey: 'ware',
+          resourceKey: 'wareordertaskdetail',
+          apiBase: 'ware'
+        }
+      }
+    ]
+  },
+  {
+    path: '/product',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/product/publish',
+    meta: { title: '商品管理', icon: 'Goods' },
+    children: [
+      {
+        path: 'publish',
+        name: 'ProductPublish',
+        component: ProductPublish,
+        meta: { title: '商品发布', icon: 'Promotion', perms: 'product:publish:info' }
       },
       {
         path: 'spu',
         name: 'ProductSpu',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SPU 管理', icon: 'Box', productKey: 'spuinfo' }
+        component: ResourceCrud,
+        meta: { title: 'SPU 管理', icon: 'Box', moduleKey: 'product', resourceKey: 'spuinfo', apiBase: 'product' }
       },
       {
         path: 'sku',
         name: 'ProductSku',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SKU 管理', icon: 'Tickets', productKey: 'skuinfo' }
-      },
-      {
-        path: 'spu-attr-value',
-        name: 'ProductAttrValue',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SPU 属性值', icon: 'List', productKey: 'productattrvalue' }
-      },
-      {
-        path: 'spu-desc',
-        name: 'ProductSpuDesc',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SPU 介绍', icon: 'Document', productKey: 'spuinfodesc' }
-      },
-      {
-        path: 'spu-images',
-        name: 'ProductSpuImages',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SPU 图片', icon: 'Picture', productKey: 'spuimages' }
-      },
-      {
-        path: 'sku-images',
-        name: 'ProductSkuImages',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SKU 图片', icon: 'PictureFilled', productKey: 'skuimages' }
-      },
-      {
-        path: 'sku-sale-attr',
-        name: 'ProductSkuSaleAttr',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: 'SKU 销售属性', icon: 'Sell', productKey: 'skusaleattrvalue' }
+        component: ResourceCrud,
+        meta: { title: 'SKU 管理', icon: 'Tickets', moduleKey: 'product', resourceKey: 'skuinfo', apiBase: 'product' }
       },
       {
         path: 'comment',
         name: 'ProductComment',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '商品评价', icon: 'ChatDotRound', productKey: 'spucomment' }
+        component: ResourceCrud,
+        meta: {
+          title: '商品评价',
+          icon: 'ChatDotRound',
+          moduleKey: 'product',
+          resourceKey: 'spucomment',
+          apiBase: 'product'
+        }
       },
       {
         path: 'comment-replay',
         name: 'ProductCommentReplay',
-        component: () => import('@/views/product/ProductCrud.vue'),
-        meta: { title: '评价回复', icon: 'ChatLineRound', productKey: 'commentreplay' }
+        component: ResourceCrud,
+        meta: {
+          title: '评价回复',
+          icon: 'ChatLineRound',
+          moduleKey: 'product',
+          resourceKey: 'commentreplay',
+          apiBase: 'product'
+        }
       }
     ]
   },
@@ -203,6 +326,7 @@ export const asyncRoutes = [
       }
     ]
   },
+  ...legacyProductRedirects,
   // 兜底 404
   { path: '/:pathMatch(.*)*', redirect: '/404', meta: { hidden: true } }
 ]
