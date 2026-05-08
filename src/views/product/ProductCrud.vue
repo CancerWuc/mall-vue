@@ -160,7 +160,7 @@
               filterable
               class="full-control"
               :disabled="isFieldDisabled(item)"
-              :placeholder="item.placeholder || '���选择属性'"
+              :placeholder="item.placeholder || '请选择属性'"
               @change="(value) => onAttrChange(item, value)"
             >
               <el-option
@@ -177,7 +177,7 @@
               filterable
               class="full-control"
               :disabled="isFieldDisabled(item)"
-              :placeholder="item.placeholder || '���选择分组'"
+              :placeholder="item.placeholder || '请选择分组'"
               @change="(value) => onAttrGroupChange(item, value)"
             >
               <el-option
