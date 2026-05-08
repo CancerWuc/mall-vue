@@ -50,7 +50,7 @@ export const productConfigs = {
     ],
     formFields: [
       field('name', '分类名称', { required: true }),
-      field('parentCid', '父分类ID', { type: 'number', defaultValue: 0 }),
+      field('parentCid', '父分类', { type: 'category' }),
       field('catLevel', '层级', { type: 'number', defaultValue: 1 }),
       field('showStatus', '是否显示', { type: 'switch', defaultValue: 1 }),
       field('sort', '排序', { type: 'number', defaultValue: 0 }),
@@ -163,8 +163,7 @@ export const productConfigs = {
     ],
     formFields: [
       field('brandId', '品牌名称', { type: 'brand', required: true, nameProp: 'brandName' }),
-      field('catelogId', '所属分类', { type: 'category', required: true }),
-      field('catelogName', '分类名')
+      field('catelogId', '所属分类', { type: 'category', required: true, nameProp: 'catelogName' })
     ]
   },
   spuinfo: {
@@ -246,8 +245,7 @@ export const productConfigs = {
     ],
     formFields: [
       field('spuId', 'SPU 名称', { type: 'spu', required: true, nameProp: 'spuName' }),
-      field('attrId', '属性ID', { type: 'number', required: true }),
-      field('attrName', '属性名'),
+      field('attrId', '属性名', { type: 'attr', required: true, nameProp: 'attrName' }),
       field('attrValue', '属性值'),
       field('attrSort', '排序', { type: 'number', defaultValue: 0 }),
       field('quickShow', '快速展示', { type: 'switch', defaultValue: 0 })
@@ -266,9 +264,8 @@ export const productConfigs = {
       field('attrSort', '排序', { width: 90 })
     ],
     formFields: [
-      field('skuId', 'SKU ID', { type: 'number', required: true }),
-      field('attrId', '属性ID', { type: 'number', required: true }),
-      field('attrName', '属性名'),
+      field('skuId', 'SKU 名称', { type: 'sku', required: true, nameProp: 'skuName' }),
+      field('attrId', '属性名', { type: 'attr', required: true, nameProp: 'attrName' }),
       field('attrValue', '属性值'),
       field('attrSort', '排序', { type: 'number', defaultValue: 0 })
     ]
@@ -291,7 +288,7 @@ export const productConfigs = {
       field('createTime', '创建时间', { width: 170 })
     ],
     formFields: [
-      field('skuId', 'SKU ID', { type: 'number' }),
+      field('skuId', 'SKU 名称', { type: 'sku', nameProp: 'skuName' }),
       field('spuId', '商品名', { type: 'spu', nameProp: 'spuName' }),
       field('memberNickName', '会员昵称'),
       field('star', '评分', { type: 'number', defaultValue: 5 }),

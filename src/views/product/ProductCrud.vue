@@ -187,6 +187,23 @@
                 :value="group.attrGroupId"
               />
             </el-select>
+            <el-select
+              v-else-if="item.type === 'sku'"
+              v-model="form[item.prop]"
+              clearable
+              filterable
+              class="full-control"
+              :disabled="isFieldDisabled(item)"
+              :placeholder="item.placeholder || '请选择 SKU'"
+              @change="(value) => onSkuChange(item, value)"
+            >
+              <el-option
+                v-for="sku in skuOptions"
+                :key="sku.skuId"
+                :label="sku.skuName"
+                :value="sku.skuId"
+              />
+            </el-select>
             <el-popover
               v-else-if="item.type === 'category'"
               v-model:visible="categoryPickerVisible[item.prop]"
@@ -312,6 +329,7 @@ const brandOptions = ref([])
 const spuOptions = ref([])
 const attrOptions = ref([])
 const attrGroupOptions = ref([])
+const skuOptions = ref([])
 const categoryPickerVisible = reactive({})
 const pendingCategoryValues = reactive({})
 const categoryProps = {
@@ -374,6 +392,7 @@ async function onOpen() {
   await ensureSpuOptions()
   await ensureAttrOptions()
   await ensureAttrGroupOptions()
+  await ensureSkuOptions()
   formRef.value?.clearValidate()
   if (editingId.value !== null && typeof editingId.value !== 'undefined') {
     formLoading.value = true
@@ -452,6 +471,20 @@ async function ensureAttrGroupOptions() {
   )
 }
 
+async function ensureSkuOptions() {
+  if (!config.value.formFields.some((item) => item.type === 'sku')) {
+    return
+  }
+  if (skuOptions.value.length) {
+    return
+  }
+
+  const { page } = await listResource('product', 'skuinfo', { page: 1, limit: 1000 })
+  skuOptions.value = [...(page?.list || [])].sort(
+    (a, b) => Number(a.skuId || 0) - Number(b.skuId || 0)
+  )
+}
+
 function normalizeCategoryOptions(categories) {
   return categories.map((category) => {
     const children = normalizeCategoryOptions(category.children || [])
@@ -471,6 +504,11 @@ function openCategoryPicker(prop) {
 
 function confirmCategory(prop) {
   form[prop] = pendingCategoryValues[prop] ?? null
+  const item = config.value.formFields.find((f) => f.prop === prop)
+  if (item?.nameProp && form[prop] != null) {
+    const path = findCategoryPath(categoryOptions.value, form[prop])
+    form[item.nameProp] = path.length ? path[path.length - 1].name : ''
+  }
   categoryPickerVisible[prop] = false
   formRef.value?.validateField(prop)
 }
@@ -485,6 +523,9 @@ function clearCategory(item) {
     return
   }
   form[item.prop] = null
+  if (item.nameProp) {
+    form[item.nameProp] = ''
+  }
   pendingCategoryValues[item.prop] = null
   formRef.value?.validateField(item.prop)
 }
@@ -523,6 +564,14 @@ function onAttrGroupChange(item, value) {
   form[item.nameProp] = group?.attrGroupName || ''
 }
 
+function onSkuChange(item, value) {
+  if (!item.nameProp) {
+    return
+  }
+  const sku = skuOptions.value.find((option) => option.skuId === value)
+  form[item.nameProp] = sku?.skuName || ''
+}
+
 function fillDerivedFormValues() {
   config.value.formFields.forEach((item) => {
     if (item.type === 'brand') {
@@ -536,6 +585,15 @@ function fillDerivedFormValues() {
     }
     if (item.type === 'attrgroup') {
       onAttrGroupChange(item, form[item.prop])
+    }
+    if (item.type === 'sku') {
+      onSkuChange(item, form[item.prop])
+    }
+    if (item.type === 'category' && item.nameProp && form[item.prop] != null) {
+      const path = findCategoryPath(categoryOptions.value, form[item.prop])
+      if (path.length) {
+        form[item.nameProp] = path[path.length - 1].name
+      }
     }
   })
 }
