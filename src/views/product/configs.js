@@ -146,8 +146,8 @@ export const productConfigs = {
       field('attrSort', '排序', { width: 90 })
     ],
     formFields: [
-      field('attrId', '属性ID', { type: 'number', required: true }),
-      field('attrGroupId', '分组ID', { type: 'number', required: true }),
+      field('attrId', '属性名称', { type: 'attr', required: true, nameProp: 'attrName' }),
+      field('attrGroupId', '分组名称', { type: 'attrgroup', required: true, nameProp: 'attrGroupName' }),
       field('attrSort', '排序', { type: 'number', defaultValue: 0 })
     ]
   },

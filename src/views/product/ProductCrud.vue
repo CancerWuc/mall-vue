@@ -153,6 +153,40 @@
                 :value="spu.id"
               />
             </el-select>
+            <el-select
+              v-else-if="item.type === 'attr'"
+              v-model="form[item.prop]"
+              clearable
+              filterable
+              class="full-control"
+              :disabled="isFieldDisabled(item)"
+              :placeholder="item.placeholder || '���选择属性'"
+              @change="(value) => onAttrChange(item, value)"
+            >
+              <el-option
+                v-for="attr in attrOptions"
+                :key="attr.attrId"
+                :label="attr.attrName"
+                :value="attr.attrId"
+              />
+            </el-select>
+            <el-select
+              v-else-if="item.type === 'attrgroup'"
+              v-model="form[item.prop]"
+              clearable
+              filterable
+              class="full-control"
+              :disabled="isFieldDisabled(item)"
+              :placeholder="item.placeholder || '���选择分组'"
+              @change="(value) => onAttrGroupChange(item, value)"
+            >
+              <el-option
+                v-for="group in attrGroupOptions"
+                :key="group.attrGroupId"
+                :label="group.attrGroupName"
+                :value="group.attrGroupId"
+              />
+            </el-select>
             <el-popover
               v-else-if="item.type === 'category'"
               v-model:visible="categoryPickerVisible[item.prop]"
@@ -276,6 +310,8 @@ const uploadingField = ref('')
 const categoryOptions = ref([])
 const brandOptions = ref([])
 const spuOptions = ref([])
+const attrOptions = ref([])
+const attrGroupOptions = ref([])
 const categoryPickerVisible = reactive({})
 const pendingCategoryValues = reactive({})
 const categoryProps = {
@@ -292,8 +328,8 @@ const rules = computed(() =>
       map[item.prop] = [
         {
           required: true,
-          message: `${['brand', 'category', 'select', 'spu'].includes(item.type) ? '请选择' : '请输入'}${item.label}`,
-          trigger: ['brand', 'category', 'select', 'spu'].includes(item.type) ? 'change' : 'blur'
+          message: `${['brand', 'category', 'select', 'spu', 'attr', 'attrgroup'].includes(item.type) ? '请选择' : '请输入'}${item.label}`,
+          trigger: ['brand', 'category', 'select', 'spu', 'attr', 'attrgroup'].includes(item.type) ? 'change' : 'blur'
         }
       ]
     }
@@ -336,6 +372,8 @@ async function onOpen() {
   await ensureCategoryOptions()
   await ensureBrandOptions()
   await ensureSpuOptions()
+  await ensureAttrOptions()
+  await ensureAttrGroupOptions()
   formRef.value?.clearValidate()
   if (editingId.value !== null && typeof editingId.value !== 'undefined') {
     formLoading.value = true
@@ -384,6 +422,34 @@ async function ensureSpuOptions() {
 
   const { page } = await listResource('product', 'spuinfo', { page: 1, limit: 1000 })
   spuOptions.value = [...(page?.list || [])].sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+}
+
+async function ensureAttrOptions() {
+  if (!config.value.formFields.some((item) => item.type === 'attr')) {
+    return
+  }
+  if (attrOptions.value.length) {
+    return
+  }
+
+  const { page } = await listResource('product', 'attr', { page: 1, limit: 1000 })
+  attrOptions.value = [...(page?.list || [])].sort(
+    (a, b) => Number(a.attrId || 0) - Number(b.attrId || 0)
+  )
+}
+
+async function ensureAttrGroupOptions() {
+  if (!config.value.formFields.some((item) => item.type === 'attrgroup')) {
+    return
+  }
+  if (attrGroupOptions.value.length) {
+    return
+  }
+
+  const { page } = await listResource('product', 'attrgroup', { page: 1, limit: 1000 })
+  attrGroupOptions.value = [...(page?.list || [])].sort(
+    (a, b) => Number(a.attrGroupId || 0) - Number(b.attrGroupId || 0)
+  )
 }
 
 function normalizeCategoryOptions(categories) {
@@ -441,6 +507,22 @@ function onSpuChange(item, value) {
   applyLinkedFields(item, spu)
 }
 
+function onAttrChange(item, value) {
+  if (!item.nameProp) {
+    return
+  }
+  const attr = attrOptions.value.find((option) => option.attrId === value)
+  form[item.nameProp] = attr?.attrName || ''
+}
+
+function onAttrGroupChange(item, value) {
+  if (!item.nameProp) {
+    return
+  }
+  const group = attrGroupOptions.value.find((option) => option.attrGroupId === value)
+  form[item.nameProp] = group?.attrGroupName || ''
+}
+
 function fillDerivedFormValues() {
   config.value.formFields.forEach((item) => {
     if (item.type === 'brand') {
@@ -448,6 +530,12 @@ function fillDerivedFormValues() {
     }
     if (item.type === 'spu') {
       onSpuChange(item, form[item.prop])
+    }
+    if (item.type === 'attr') {
+      onAttrChange(item, form[item.prop])
+    }
+    if (item.type === 'attrgroup') {
+      onAttrGroupChange(item, form[item.prop])
     }
   })
 }
