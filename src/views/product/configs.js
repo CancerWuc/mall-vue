@@ -221,6 +221,17 @@ export const productConfigs = {
     infoKey: 'spuInfo',
     idField: 'id',
     nameField: 'spuName',
+    rowActions: [
+      {
+        label: '上架',
+        type: 'confirm-action',
+        condition: (row) => row.publishStatus === 0,
+        confirmTitle: '确认上架',
+        confirmMessage: (row) => `确认上架 SPU [${row.spuName}] 吗？系统将校验该 SPU 下所有 SKU 的基础信息与库存。`,
+        api: { base: 'product', path: (row) => `spuinfo/up/${row.id}` },
+        successMessage: '商品上架成功'
+      }
+    ],
     tableFields: [
       field('id', 'ID', { width: 90 }),
       field('spuName', '商品名称', { minWidth: 180 }),
