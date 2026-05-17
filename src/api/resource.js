@@ -19,3 +19,7 @@ export function updateResource(apiBase, resource, data) {
 export function deleteResource(apiBase, resource, ids) {
   return request({ url: `/${apiBase}/${resource}/delete`, method: 'post', data: ids })
 }
+
+export function postAction(apiBase, path, data) {
+  return request({ url: `/${apiBase}/${path}`, method: 'post', data })
+}

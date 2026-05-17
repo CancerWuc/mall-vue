@@ -16,6 +16,12 @@
           <el-button @click="loadList">
             <el-icon><Refresh /></el-icon>刷新
           </el-button>
+          <el-button
+            v-for="action in (config.toolbarActions || [])"
+            :key="action.label"
+            :disabled="action.requireSelection && !selection.length"
+            @click="onToolbarAction(action)"
+          >{{ action.label }}</el-button>
         </div>
       </div>
 
@@ -115,6 +121,53 @@
           >
             <el-option v-for="sku in skuOptions" :key="sku.skuId" :label="sku.skuName" :value="sku.skuId" />
           </el-select>
+          <el-select
+            v-else-if="item.type === 'ware'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择仓库'"
+          >
+            <el-option v-for="ware in wareOptions" :key="ware.id" :label="ware.name" :value="ware.id" />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'purchase'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择采购单'"
+          >
+            <el-option
+              v-for="p in purchaseOptions"
+              :key="p.id"
+              :label="`#${p.id}${p.assigneeName ? ' · ' + p.assigneeName : ''}`"
+              :value="p.id"
+            />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'sysuser'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择采购人'"
+          >
+            <el-option
+              v-for="u in sysuserOptions"
+              :key="u.userId"
+              :label="u.username"
+              :value="u.userId"
+            />
+          </el-select>
+          <el-switch
+            v-else-if="item.type === 'switch'"
+            v-model="query[item.prop]"
+            :active-value="item.activeValue ?? 'true'"
+            :inactive-value="item.inactiveValue ?? false"
+            @change="onSearch"
+          />
           <el-cascader
             v-else-if="item.type === 'category'"
             v-model="query[item.prop]"
@@ -174,18 +227,36 @@
               <span v-else class="text-muted">无</span>
             </template>
             <template v-else-if="column.type === 'tag'">
-              <el-tag :type="tagType(row[column.prop])" size="small">
+              <el-tag :type="tagType(column, row[column.prop])" size="small">
                 {{ optionLabel(column, row[column.prop]) }}
               </el-tag>
+            </template>
+            <template v-else-if="column.type === 'ware'">
+              {{ row[column.nameProp || 'wareName'] || resolveWareName(row[column.prop]) }}
+            </template>
+            <template v-else-if="column.type === 'sku'">
+              {{ resolveSkuName(row[column.prop]) }}
             </template>
             <template v-else>
               {{ formatValue(row[column.prop]) }}
             </template>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column
+          label="操作"
+          :width="150 + (config.rowActions?.length || 0) * 70"
+          fixed="right"
+        >
           <template #default="{ row }">
             <el-button link type="primary" @click="openForm(row[config.idField])">编辑</el-button>
+            <template v-for="action in (config.rowActions || [])" :key="action.label">
+              <el-button
+                v-if="!action.condition || action.condition(row)"
+                link
+                type="primary"
+                @click="onRowAction(action, row)"
+              >{{ action.label }}</el-button>
+            </template>
             <el-button link type="danger" @click="onDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -331,6 +402,57 @@
                 :value="sku.skuId"
               />
             </el-select>
+            <el-select
+              v-else-if="item.type === 'ware'"
+              v-model="form[item.prop]"
+              clearable
+              filterable
+              class="full-control"
+              :disabled="isFieldDisabled(item)"
+              :placeholder="item.placeholder || '请选择仓库'"
+              @change="(value) => onWareChange(item, value)"
+            >
+              <el-option
+                v-for="ware in wareOptions"
+                :key="ware.id"
+                :label="ware.name"
+                :value="ware.id"
+              />
+            </el-select>
+            <el-select
+              v-else-if="item.type === 'purchase'"
+              v-model="form[item.prop]"
+              clearable
+              filterable
+              class="full-control"
+              :disabled="isFieldDisabled(item)"
+              :placeholder="item.placeholder || '请选择采购单'"
+              @change="(value) => onPurchaseChange(item, value)"
+            >
+              <el-option
+                v-for="p in purchaseOptions"
+                :key="p.id"
+                :label="`#${p.id}${p.assigneeName ? ' · ' + p.assigneeName : ''}`"
+                :value="p.id"
+              />
+            </el-select>
+            <el-select
+              v-else-if="item.type === 'sysuser'"
+              v-model="form[item.prop]"
+              clearable
+              filterable
+              class="full-control"
+              :disabled="isFieldDisabled(item)"
+              :placeholder="item.placeholder || '请选择采购人'"
+              @change="(value) => onSysuserChange(item, value)"
+            >
+              <el-option
+                v-for="u in sysuserOptions"
+                :key="u.userId"
+                :label="u.username"
+                :value="u.userId"
+              />
+            </el-select>
             <el-popover
               v-else-if="item.type === 'category'"
               v-model:visible="categoryPickerVisible[item.prop]"
@@ -415,21 +537,66 @@
         <el-button type="primary" :loading="submitting" @click="onSubmit">确定</el-button>
       </template>
     </el-dialog>
+    <el-dialog
+      v-model="toolbarDialogVisible"
+      :title="toolbarDialogAction?.title || '操作'"
+      width="480px"
+    >
+      <el-form :model="toolbarDialogForm" label-width="90px">
+        <el-form-item
+          v-for="item in (toolbarDialogAction?.fields || [])"
+          :key="item.prop"
+          :label="item.label"
+        >
+          <el-select
+            v-if="item.type === 'ware'"
+            v-model="toolbarDialogForm[item.prop]"
+            filterable
+            clearable
+            class="full-control"
+            placeholder="请选择仓库"
+          >
+            <el-option v-for="w in wareOptions" :key="w.id" :label="w.name" :value="w.id" />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'select'"
+            v-model="toolbarDialogForm[item.prop]"
+            clearable
+            class="full-control"
+          >
+            <el-option v-for="o in item.options" :key="o.value" :label="o.label" :value="o.value" />
+          </el-select>
+          <el-input-number
+            v-else-if="item.type === 'number'"
+            v-model="toolbarDialogForm[item.prop]"
+            :min="item.min ?? 0"
+            controls-position="right"
+            class="full-control"
+          />
+          <el-input v-else v-model="toolbarDialogForm[item.prop]" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="toolbarDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="toolbarDialogSubmitting" @click="onToolbarDialogSubmit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Pagination from '@/components/Pagination/index.vue'
 import { productConfigs } from './configs'
 import { wareConfigs } from '@/views/inventory/configs'
 import { uploadOss } from '@/api/oss'
 import { listCategoryTree, listUnrelatedAttrs } from '@/api/product'
-import { deleteResource, getResource, listResource, saveResource, updateResource } from '@/api/resource'
+import { deleteResource, getResource, listResource, postAction, saveResource, updateResource } from '@/api/resource'
 
 const route = useRoute()
+const router = useRouter()
 const configGroups = {
   product: productConfigs,
   ware: wareConfigs
@@ -460,6 +627,13 @@ const unrelatedAttrOptions = ref([])
 const unrelatedAttrsLoading = ref(false)
 const attrGroupOptions = ref([])
 const skuOptions = ref([])
+const wareOptions = ref([])
+const purchaseOptions = ref([])
+const sysuserOptions = ref([])
+const toolbarDialogVisible = ref(false)
+const toolbarDialogSubmitting = ref(false)
+const toolbarDialogAction = ref(null)
+const toolbarDialogForm = reactive({})
 const categoryPickerVisible = reactive({})
 const pendingCategoryValues = reactive({})
 const categoryProps = {
@@ -476,8 +650,8 @@ const rules = computed(() =>
       map[item.prop] = [
         {
           required: true,
-          message: `${['brand', 'category', 'select', 'spu', 'attr', 'attrgroup'].includes(item.type) ? '请选择' : '请输入'}${item.label}`,
-          trigger: ['brand', 'category', 'select', 'spu', 'attr', 'attrgroup'].includes(item.type) ? 'change' : 'blur'
+          message: `${['brand', 'category', 'select', 'spu', 'attr', 'attrgroup', 'sku', 'ware', 'purchase', 'sysuser'].includes(item.type) ? '请选择' : '请输入'}${item.label}`,
+          trigger: ['brand', 'category', 'select', 'spu', 'attr', 'attrgroup', 'sku', 'ware', 'purchase', 'sysuser'].includes(item.type) ? 'change' : 'blur'
         }
       ]
     }
@@ -537,6 +711,9 @@ async function onOpen() {
   await ensureAttrOptions()
   await ensureAttrGroupOptions()
   await ensureSkuOptions()
+  await ensureWareOptions()
+  await ensurePurchaseOptions()
+  await ensureSysuserOptions()
   formRef.value?.clearValidate()
   if (editingId.value !== null && typeof editingId.value !== 'undefined') {
     formLoading.value = true
@@ -631,6 +808,44 @@ async function ensureSkuOptions() {
   )
 }
 
+async function ensureWareOptions() {
+  if (!hasFieldType('ware')) {
+    return
+  }
+  if (wareOptions.value.length) {
+    return
+  }
+
+  const { page } = await listResource('ware', 'wareinfo', { page: 1, limit: 1000 })
+  wareOptions.value = [...(page?.list || [])].sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+}
+
+async function ensurePurchaseOptions() {
+  if (!hasFieldType('purchase')) {
+    return
+  }
+  if (purchaseOptions.value.length) {
+    return
+  }
+
+  const { page } = await listResource('ware', 'purchase', { page: 1, limit: 1000 })
+  purchaseOptions.value = [...(page?.list || [])].sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
+}
+
+async function ensureSysuserOptions() {
+  if (!hasFieldType('sysuser')) {
+    return
+  }
+  if (sysuserOptions.value.length) {
+    return
+  }
+
+  const { page } = await listResource('admin', 'sys/user', { page: 1, limit: 1000 })
+  sysuserOptions.value = (page?.list || [])
+    .filter((u) => u.status === 1)
+    .sort((a, b) => Number(a.userId || 0) - Number(b.userId || 0))
+}
+
 function normalizeCategoryOptions(categories) {
   return categories.map((category) => {
     const children = normalizeCategoryOptions(category.children || [])
@@ -645,7 +860,7 @@ function normalizeCategoryOptions(categories) {
 }
 
 function allFields() {
-  return [...(config.value.formFields || []), ...searchFields.value]
+  return [...(config.value.formFields || []), ...searchFields.value, ...(config.value.tableFields || [])]
 }
 
 function hasFieldType(type) {
@@ -659,12 +874,15 @@ async function ensureSearchOptions() {
   await ensureAttrOptions()
   await ensureAttrGroupOptions()
   await ensureSkuOptions()
+  await ensureWareOptions()
+  await ensurePurchaseOptions()
+  await ensureSysuserOptions()
 }
 
 function syncSearchQuery() {
   searchFields.value.forEach((item) => {
     if (typeof query[item.prop] === 'undefined') {
-      query[item.prop] = item.defaultValue ?? ''
+      query[item.prop] = item.defaultValue ?? (item.type === 'switch' ? false : '')
     }
   })
 }
@@ -676,6 +894,18 @@ function resetSearchQuery() {
     }
   })
   syncSearchQuery()
+}
+
+function applyRouteQuery() {
+  const q = route.query
+  if (!q || !Object.keys(q).length) return
+  searchFields.value.forEach((item) => {
+    if (q[item.prop] !== undefined) {
+      const raw = q[item.prop]
+      const parsed = Number(raw)
+      query[item.prop] = isNaN(parsed) ? raw : parsed
+    }
+  })
 }
 
 function openCategoryPicker(prop) {
@@ -758,8 +988,35 @@ function onSkuChange(item, value) {
   if (!item.nameProp) {
     return
   }
-  const sku = skuOptions.value.find((option) => option.skuId === value)
+  const sku = skuOptions.value.find((option) => isSameId(option.skuId, value))
   form[item.nameProp] = sku?.skuName || ''
+}
+
+function onWareChange(item, value) {
+  if (!item.nameProp) {
+    return
+  }
+  const ware = wareOptions.value.find((w) => isSameId(w.id, value))
+  form[item.nameProp] = ware?.name || ''
+}
+
+function onPurchaseChange(item, value) {
+  if (value === null || typeof value === 'undefined' || value === '') {
+    if (!item.preserveLinkedFieldsOnEmpty) {
+      applyLinkedFields(item, null)
+    }
+    return
+  }
+  const purchase = purchaseOptions.value.find((p) => isSameId(p.id, value))
+  applyLinkedFields(item, purchase || null)
+}
+
+function onSysuserChange(item, value) {
+  const user = sysuserOptions.value.find((u) => isSameId(u.userId, value))
+  if (item.nameProp) {
+    form[item.nameProp] = user?.username || ''
+  }
+  applyLinkedFields(item, user || null)
 }
 
 function fillDerivedFormValues() {
@@ -778,6 +1035,15 @@ function fillDerivedFormValues() {
     }
     if (item.type === 'sku') {
       onSkuChange(item, form[item.prop])
+    }
+    if (item.type === 'ware') {
+      onWareChange(item, form[item.prop])
+    }
+    if (item.type === 'purchase') {
+      onPurchaseChange(item, form[item.prop])
+    }
+    if (item.type === 'sysuser') {
+      onSysuserChange(item, form[item.prop])
     }
     if (item.type === 'category' && item.nameProp && form[item.prop] != null) {
       const path = findCategoryPath(categoryOptions.value, form[item.prop])
@@ -920,6 +1186,64 @@ async function onDelete(row) {
   loadList()
 }
 
+async function onRowAction(action, row) {
+  if (action.navigate) {
+    router.push({ path: action.navigate, query: { [action.queryKey]: row[config.value.idField] } })
+    return
+  }
+  if (action.type === 'confirm-action') {
+    const msg = typeof action.confirmMessage === 'function'
+      ? action.confirmMessage(row) : (action.confirmMessage || '确认执行此操作？')
+    await ElMessageBox.confirm(msg, action.confirmTitle || '提示', { type: 'warning' })
+    const path = typeof action.api.path === 'function' ? action.api.path(row) : action.api.path
+    await postAction(action.api.base, path, {})
+    ElMessage.success(action.successMessage || '操作成功')
+    loadList()
+  }
+}
+
+function onToolbarAction(action) {
+  if (action.requireSelection && !selection.value.length) {
+    ElMessage.warning('请先勾选数据')
+    return
+  }
+  if (action.type === 'form-dialog') {
+    Object.keys(toolbarDialogForm).forEach((k) => delete toolbarDialogForm[k])
+    action.fields?.forEach((f) => {
+      toolbarDialogForm[f.prop] = f.defaultValue ?? null
+    })
+    toolbarDialogAction.value = action
+    toolbarDialogVisible.value = true
+  }
+}
+
+async function onToolbarDialogSubmit() {
+  const action = toolbarDialogAction.value
+  const missingField = action.fields?.find((f) => f.required && !toolbarDialogForm[f.prop])
+  if (missingField) {
+    ElMessage.error(`请填写：${missingField.label}`)
+    return
+  }
+  const payload = {
+    ...toolbarDialogForm,
+    [action.api.selectionKey]: selection.value.map((r) => r[config.value.idField])
+  }
+  toolbarDialogSubmitting.value = true
+  try {
+    await postAction(action.api.base, action.api.path, payload)
+    ElMessage.success(action.successMessage || '操作成功')
+    toolbarDialogVisible.value = false
+    selection.value = []
+    if (action.afterSuccess?.navigate) {
+      router.push(action.afterSuccess.navigate)
+    } else {
+      loadList()
+    }
+  } finally {
+    toolbarDialogSubmitting.value = false
+  }
+}
+
 async function onBatchDelete() {
   await ElMessageBox.confirm(`确认删除选中的 ${selection.value.length} 条数据吗？`, '提示', {
     type: 'warning'
@@ -972,7 +1296,8 @@ function clearImage(prop) {
   form[prop] = ''
 }
 
-function tagType(value) {
+function tagType(column, value) {
+  if (column.tagColorMap) return column.tagColorMap[value] ?? 'info'
   return Number(value) === 1 ? 'success' : 'info'
 }
 
@@ -981,8 +1306,29 @@ function formatValue(value) {
   return value
 }
 
+function isSameId(left, right) {
+  if (
+    left === null || typeof left === 'undefined' || left === '' ||
+    right === null || typeof right === 'undefined' || right === ''
+  ) {
+    return left === right
+  }
+  return String(left) === String(right)
+}
+
+function resolveWareName(id) {
+  if (id === null || typeof id === 'undefined' || id === '') return '-'
+  return wareOptions.value.find((w) => isSameId(w.id, id))?.name || id
+}
+
+function resolveSkuName(id) {
+  if (id === null || typeof id === 'undefined' || id === '') return '-'
+  return skuOptions.value.find((s) => isSameId(s.skuId, id))?.skuName || id
+}
+
 onMounted(async () => {
   syncSearchQuery()
+  applyRouteQuery()
   await ensureSearchOptions()
   await loadList()
 })
