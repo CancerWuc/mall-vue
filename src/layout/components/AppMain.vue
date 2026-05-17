@@ -13,7 +13,9 @@
 <style scoped>
 .app-main {
   padding: 0;
-  background: #f0f2f5;
+  background:
+    linear-gradient(180deg, rgba(232, 240, 255, 0.72) 0%, rgba(245, 247, 251, 0) 250px),
+    #f5f7fb;
   height: calc(100vh - 56px - 38px);
   overflow: auto;
 }

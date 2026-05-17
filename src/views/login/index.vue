@@ -96,7 +96,9 @@ async function onSubmit() {
 <style lang="scss" scoped>
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1f3a8a 0%, #2563eb 50%, #06b6d4 100%);
+  background:
+    linear-gradient(135deg, rgba(47, 125, 246, 0.18), rgba(22, 160, 133, 0.16)),
+    #f5f7fb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,13 +112,16 @@ async function onSubmit() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(230, 237, 247, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(36, 62, 99, 0.14);
   overflow: hidden;
 }
 
 .login-banner {
-  background: linear-gradient(160deg, #0ea5e9, #2563eb 50%, #1e3a8a);
+  background:
+    linear-gradient(160deg, rgba(47, 125, 246, 0.94), rgba(22, 160, 133, 0.94)),
+    #102033;
   color: #fff;
   padding: 56px 36px;
   display: flex;
@@ -126,7 +131,7 @@ async function onSubmit() {
   .banner-title {
     font-size: 36px;
     font-weight: 800;
-    letter-spacing: 2px;
+    letter-spacing: 0;
   }
   .banner-sub {
     margin-top: 8px;
@@ -158,7 +163,7 @@ async function onSubmit() {
 .login-title {
   margin: 0 0 24px 0;
   font-size: 22px;
-  color: #303133;
+  color: #1f2937;
 }
 
 .tip {
@@ -172,7 +177,7 @@ async function onSubmit() {
   left: 0;
   right: 0;
   text-align: center;
-  color: rgba(255, 255, 255, 0.7);
+  color: #8a96a8;
   font-size: 12px;
 }
 

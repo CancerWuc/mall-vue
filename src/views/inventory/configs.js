@@ -1,5 +1,20 @@
 const field = (prop, label, options = {}) => ({ prop, label, ...options })
 
+const purchaseStatusOptions = [
+  { label: '新建', value: 0 },
+  { label: '已分配', value: 1 },
+  { label: '已领取', value: 2 },
+  { label: '已完成', value: 3 },
+  { label: '有异常', value: 4 }
+]
+
+const taskStatusOptions = [
+  { label: '新建', value: 0 },
+  { label: '已锁定', value: 1 },
+  { label: '已解锁', value: 2 },
+  { label: '已扣减', value: 3 }
+]
+
 export const wareConfigs = {
   waresku: {
     title: '商品库存',
@@ -14,6 +29,11 @@ export const wareConfigs = {
       field('wareId', '仓库 ID', { width: 110 }),
       field('stock', '库存数', { width: 100 }),
       field('stockLocked', '锁定库存', { width: 110 })
+    ],
+    searchFields: [
+      field('skuName', 'SKU 名称'),
+      field('skuId', 'SKU ID', { type: 'number', min: 0 }),
+      field('wareId', '仓库 ID', { type: 'number', min: 0 })
     ],
     formFields: [
       field('skuId', 'SKU ID', { type: 'number', required: true }),
@@ -34,6 +54,10 @@ export const wareConfigs = {
       field('name', '仓库名', { minWidth: 160 }),
       field('address', '仓库地址', { minWidth: 240 }),
       field('areacode', '区域编码', { minWidth: 140 })
+    ],
+    searchFields: [
+      field('name', '仓库名'),
+      field('areacode', '区域编码')
     ],
     formFields: [
       field('name', '仓库名', { required: true }),
@@ -57,6 +81,11 @@ export const wareConfigs = {
       field('amount', '总金额', { width: 120 }),
       field('createTime', '创建时间', { width: 170 }),
       field('updateTime', '更新时间', { width: 170 })
+    ],
+    searchFields: [
+      field('assigneeName', '采购人'),
+      field('status', '状态', { type: 'select', options: purchaseStatusOptions }),
+      field('wareId', '仓库 ID', { type: 'number', min: 0 })
     ],
     formFields: [
       field('assigneeId', '采购人 ID', { type: 'number' }),
@@ -85,6 +114,12 @@ export const wareConfigs = {
       field('wareId', '仓库 ID', { width: 110 }),
       field('status', '状态', { width: 90 })
     ],
+    searchFields: [
+      field('purchaseId', '采购单 ID', { type: 'number', min: 0 }),
+      field('skuId', 'SKU ID', { type: 'number', min: 0 }),
+      field('status', '状态', { type: 'select', options: purchaseStatusOptions }),
+      field('wareId', '仓库 ID', { type: 'number', min: 0 })
+    ],
     formFields: [
       field('purchaseId', '采购单 ID', { type: 'number' }),
       field('skuId', 'SKU ID', { type: 'number', required: true }),
@@ -111,6 +146,12 @@ export const wareConfigs = {
       field('wareId', '仓库 ID', { width: 100 }),
       field('trackingNo', '物流单号', { minWidth: 150 }),
       field('createTime', '创建时间', { width: 170 })
+    ],
+    searchFields: [
+      field('orderSn', '订单号'),
+      field('consignee', '收货人'),
+      field('taskStatus', '任务状态', { type: 'select', options: taskStatusOptions }),
+      field('wareId', '仓库 ID', { type: 'number', min: 0 })
     ],
     formFields: [
       field('orderId', '订单 ID', { type: 'number' }),
@@ -140,6 +181,11 @@ export const wareConfigs = {
       field('skuId', 'SKU ID', { width: 110 }),
       field('skuName', 'SKU 名称', { minWidth: 180 }),
       field('skuNum', '购买个数', { width: 110 })
+    ],
+    searchFields: [
+      field('taskId', '工作单 ID', { type: 'number', min: 0 }),
+      field('skuId', 'SKU ID', { type: 'number', min: 0 }),
+      field('skuName', 'SKU 名称')
     ],
     formFields: [
       field('taskId', '工作单 ID', { type: 'number', required: true }),

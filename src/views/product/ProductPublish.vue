@@ -147,7 +147,7 @@
         <el-form v-else-if="activeStep === 3" label-width="100px">
           <div class="section-head">
             <h3>SKU 信息</h3>
-            <el-button type="primary" @click="addSku">
+            <el-button type="primary" :disabled="!canAddSku" @click="addSku">
               <el-icon><Plus /></el-icon>新增 SKU
             </el-button>
           </div>
@@ -370,7 +370,7 @@ const categoryProps = {
   label: 'name',
   children: 'children',
   emitPath: false,
-  checkStrictly: true
+  checkStrictly: false
 }
 
 const basicRules = {
@@ -387,7 +387,9 @@ const selectedBrandName = computed(() => {
   return brand?.name || '-'
 })
 
+const selectedCategory = computed(() => findCategory(categoryOptions.value, form.catalogId))
 const selectedCategoryLabel = computed(() => categoryLabel(form.catalogId) || '-')
+const canAddSku = computed(() => saleAttrs.value.length > 0)
 const summaryBaseAttrs = computed(() => buildBaseAttrsPayload())
 const summarySkus = computed(() =>
   skus.value.map((sku) => ({
@@ -417,6 +419,11 @@ async function onCategoryChange(value) {
   published.value = false
 
   if (!value) {
+    return
+  }
+  if (!isLevelThreeCategory(value)) {
+    form.catalogId = null
+    ElMessage.warning('请选择三级分类')
     return
   }
 
@@ -450,6 +457,7 @@ function normalizeCategoryOptions(categories) {
   return categories.map((category) => {
     const children = normalizeCategoryOptions(category.children || [])
     const option = { ...category }
+    option.disabled = !children.length && option.catLevel !== 3
     if (children.length) {
       option.children = children
     } else {
@@ -470,6 +478,10 @@ function resetBaseAttrValues() {
 }
 
 function addSku() {
+  if (!canAddSku.value && skus.value.length >= 1) {
+    ElMessage.warning('当前分类没有销售属性，只能保留 1 个 SKU')
+    return
+  }
   const saleAttrMap = {}
   saleAttrs.value.forEach((attr) => {
     saleAttrMap[attr.attrId] = ''
@@ -497,6 +509,10 @@ function removeSku(index) {
 async function nextStep() {
   if (activeStep.value === 0) {
     await basicFormRef.value?.validate()
+    if (!isLevelThreeCategory(form.catalogId)) {
+      ElMessage.warning('请选择三级分类')
+      return
+    }
     if (!brandOptions.value.length) {
       ElMessage.warning('当前分类暂无可用品牌')
       return
@@ -522,7 +538,12 @@ function validateSkus() {
     ElMessage.warning('请至少添加一个 SKU')
     return false
   }
+  if (!saleAttrs.value.length && skus.value.length > 1) {
+    ElMessage.warning('当前分类没有销售属性，只能发布 1 个 SKU')
+    return false
+  }
 
+  const saleAttrSignatures = new Set()
   for (let index = 0; index < skus.value.length; index += 1) {
     const sku = skus.value[index]
     if (!hasText(sku.skuName)) {
@@ -533,17 +554,34 @@ function validateSkus() {
       ElMessage.warning(`请填写 SKU ${index + 1} 价格`)
       return false
     }
+    if (sku.saleCount !== null && typeof sku.saleCount !== 'undefined' && Number(sku.saleCount) < 0) {
+      ElMessage.warning(`SKU ${index + 1} 销量不能小于 0`)
+      return false
+    }
     for (const attr of saleAttrs.value) {
       if (!hasText(sku.saleAttrs[attr.attrId])) {
         ElMessage.warning(`请填写 SKU ${index + 1} 的${attr.attrName}`)
         return false
       }
     }
+    if (saleAttrs.value.length) {
+      const signature = saleAttrs.value
+        .map((attr) => `${attr.attrId}=${normalizeAttrValue(sku.saleAttrs[attr.attrId])}`)
+        .join('|')
+      if (saleAttrSignatures.has(signature)) {
+        ElMessage.warning(`SKU ${index + 1} 的销售属性组合重复`)
+        return false
+      }
+      saleAttrSignatures.add(signature)
+    }
   }
   return true
 }
 
 async function submitPublish() {
+  if (!validatePublishBasics()) {
+    return
+  }
   if (!validateSkus()) {
     return
   }
@@ -556,6 +594,34 @@ async function submitPublish() {
   } finally {
     submitting.value = false
   }
+}
+
+function validatePublishBasics() {
+  if (!form.catalogId) {
+    ElMessage.warning('请选择商品分类')
+    return false
+  }
+  if (!isLevelThreeCategory(form.catalogId)) {
+    ElMessage.warning('请选择三级分类')
+    return false
+  }
+  if (!form.brandId) {
+    ElMessage.warning('请选择品牌')
+    return false
+  }
+  if (!hasText(form.spuName)) {
+    ElMessage.warning('请输入商品名称')
+    return false
+  }
+  if (form.weight !== null && typeof form.weight !== 'undefined' && Number(form.weight) < 0) {
+    ElMessage.warning('商品重量不能小于 0')
+    return false
+  }
+  if (![0, 1].includes(Number(form.publishStatus))) {
+    ElMessage.warning('请选择正确的上架状态')
+    return false
+  }
+  return true
 }
 
 function buildPayload() {
@@ -616,7 +682,7 @@ function normalizeAttrValue(value) {
 
 function attrOptionList(attr) {
   return String(attr.valueSelect || '')
-    .split(/[,，\n]/)
+    .split(/[,，;；\n]/)
     .map((item) => item.trim())
     .filter(Boolean)
 }
@@ -641,6 +707,26 @@ function findCategoryPath(options, value, path = []) {
     }
   }
   return []
+}
+
+function findCategory(options, value) {
+  if (value === null || typeof value === 'undefined' || value === '') {
+    return null
+  }
+  for (const option of options) {
+    if (option.catId === value) {
+      return option
+    }
+    const matched = findCategory(option.children || [], value)
+    if (matched) {
+      return matched
+    }
+  }
+  return null
+}
+
+function isLevelThreeCategory(value) {
+  return selectedCategory.value?.catId === value && selectedCategory.value?.catLevel === 3
 }
 
 function beforeImageUpload(file) {
@@ -719,6 +805,12 @@ function hasText(value) {
 
   .publish-steps {
     margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid #eaf0f8;
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, rgba(47, 125, 246, 0.07), rgba(22, 160, 133, 0.05)),
+      #f9fbff;
   }
 
   .step-body {
@@ -786,11 +878,12 @@ function hasText(value) {
   }
 
   .sku-panel {
-    border: 1px solid #ebeef5;
-    border-radius: 6px;
+    border: 1px solid #e6edf7;
+    border-radius: 8px;
     padding: 16px 16px 4px;
     margin-bottom: 16px;
     background: #fff;
+    box-shadow: 0 10px 24px rgba(36, 62, 99, 0.05);
   }
 
   .sku-panel-head {
@@ -804,6 +897,7 @@ function hasText(value) {
       margin: 0;
       font-size: 15px;
       font-weight: 600;
+      color: #1f2937;
     }
   }
 
@@ -826,9 +920,9 @@ function hasText(value) {
   .table-image {
     width: 64px;
     height: 64px;
-    border-radius: 6px;
-    background: #f5f7fa;
-    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: #f5f7fb;
+    border: 1px solid #e6edf7;
   }
 
   .confirm-panel {
@@ -846,7 +940,7 @@ function hasText(value) {
     justify-content: flex-end;
     gap: 10px;
     padding-top: 18px;
-    border-top: 1px solid #ebeef5;
+    border-top: 1px solid #e6edf7;
   }
 }
 

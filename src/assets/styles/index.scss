@@ -1,5 +1,18 @@
 @use './variables.scss' as *;
 
+:root {
+  --el-color-primary: #{$primary};
+  --el-color-success: #{$success};
+  --el-color-warning: #{$warning};
+  --el-color-danger: #{$danger};
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-text-color-primary: #{$text-main};
+  --el-text-color-regular: #{$text-regular};
+  --el-border-color-light: #{$border-soft};
+  --el-fill-color-light: #{$surface-soft};
+}
+
 * {
   box-sizing: border-box;
 }
@@ -9,8 +22,10 @@ body {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  color: #303133;
-  background-color: #f0f2f5;
+  color: $text-main;
+  background:
+    linear-gradient(180deg, rgba(232, 240, 255, 0.7) 0%, rgba(245, 247, 251, 0) 260px),
+    $page-bg;
 }
 
 a {
@@ -19,7 +34,7 @@ a {
 }
 
 .app-container {
-  padding: 16px;
+  padding: 18px;
 }
 
 .filter-container {
@@ -34,7 +49,12 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .title-block {
+    min-width: 0;
+  }
 }
 
 .pagination-container {
@@ -48,14 +68,14 @@ a {
 
 .pagination-info {
   margin-right: auto;
-  color: #606266;
+  color: $text-regular;
   font-size: 13px;
   line-height: 32px;
   white-space: nowrap;
 }
 
 .text-muted {
-  color: #909399;
+  color: $text-muted;
   font-size: 12px;
 }
 
@@ -72,6 +92,130 @@ a {
 
 .tree-table-cell {
   padding-left: var(--tree-indent, 0);
+}
+
+.title-block {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    color: $text-main;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  span {
+    color: $text-muted;
+    font-size: 12px;
+  }
+}
+
+.el-card {
+  --el-card-border-color: transparent;
+  border-radius: 8px !important;
+  box-shadow: $shadow-soft !important;
+}
+
+.el-card__body {
+  padding: 18px;
+}
+
+.el-button {
+  border-radius: 8px !important;
+  font-weight: 500;
+}
+
+.el-button--primary {
+  --el-button-bg-color: #{$primary};
+  --el-button-border-color: #{$primary};
+  --el-button-hover-bg-color: #1f6feb;
+  --el-button-hover-border-color: #1f6feb;
+}
+
+.el-button.is-text {
+  color: $text-regular;
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 1px $border-soft inset !important;
+  transition:
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px rgba(47, 125, 246, 0.36) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow:
+    0 0 0 1px $primary inset,
+    0 0 0 3px rgba(47, 125, 246, 0.12) !important;
+}
+
+.el-table {
+  --el-table-header-bg-color: #f8fbff;
+  --el-table-header-text-color: #526071;
+  --el-table-row-hover-bg-color: #f4f8ff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 700;
+}
+
+.el-table .el-table__cell {
+  border-bottom-color: #eef3f9;
+}
+
+.el-dialog {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.el-dialog__header {
+  margin-right: 0;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #eef3f9;
+}
+
+.el-dialog__title {
+  color: $text-main;
+  font-weight: 700;
+}
+
+.el-form-item__label {
+  color: $text-regular;
+  font-weight: 500;
+}
+
+.el-tag {
+  border-radius: 8px;
+}
+
+.search-form {
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #eaf0f8;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(47, 125, 246, 0.07), rgba(22, 160, 133, 0.05)),
+    $surface-soft;
+
+  .el-form-item {
+    margin-bottom: 10px;
+  }
 }
 
 // nprogress 颜色覆盖

@@ -13,11 +13,44 @@
           <el-button type="danger" :disabled="!selection.length" @click="onBatchDelete">
             <el-icon><Delete /></el-icon>批量删除
           </el-button>
-          <el-button @click="loadRootCategories">
+          <el-button @click="reloadCategories">
             <el-icon><Refresh /></el-icon>刷新
           </el-button>
         </div>
       </div>
+
+      <el-form class="search-form" :inline="true" :model="query" @submit.prevent>
+        <el-form-item label="分类名称">
+          <el-input
+            v-model="query.name"
+            clearable
+            class="search-control"
+            placeholder="请输入分类名称"
+            @keyup.enter="onSearch"
+          />
+        </el-form-item>
+        <el-form-item label="显示状态">
+          <el-select v-model="query.showStatus" clearable class="search-control" placeholder="请选择显示状态">
+            <el-option label="隐藏" :value="0" />
+            <el-option label="显示" :value="1" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="层级">
+          <el-select v-model="query.catLevel" clearable class="search-control" placeholder="请选择层级">
+            <el-option label="一级" :value="1" />
+            <el-option label="二级" :value="2" />
+            <el-option label="三级" :value="3" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSearch">
+            <el-icon><Search /></el-icon>查询
+          </el-button>
+          <el-button @click="onResetSearch">
+            <el-icon><RefreshLeft /></el-icon>重置
+          </el-button>
+        </el-form-item>
+      </el-form>
 
       <el-table
         v-loading="loading"
@@ -25,7 +58,7 @@
         row-key="catId"
         border
         stripe
-        lazy
+        :lazy="!searchActive"
         :load="loadChildren"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         @selection-change="(rows) => (selection = rows)"
@@ -150,6 +183,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   deleteProductResource,
   getProductResource,
+  listProductResource,
   listCategoryChildren,
   listCategoryTree,
   saveProductResource,
@@ -159,6 +193,8 @@ import {
 const loading = ref(false)
 const tree = shallowRef([])
 const selection = ref([])
+const searchActive = ref(false)
+const query = reactive({ name: '', showStatus: '', catLevel: '' })
 const formVisible = ref(false)
 const formLoading = ref(false)
 const submitting = ref(false)
@@ -194,6 +230,7 @@ const rules = {
 }
 
 async function loadRootCategories() {
+  searchActive.value = false
   loading.value = true
   try {
     const { categories } = await listCategoryChildren(0)
@@ -201,6 +238,38 @@ async function loadRootCategories() {
   } finally {
     loading.value = false
   }
+}
+
+async function reloadCategories() {
+  if (searchActive.value) {
+    await onSearch()
+    return
+  }
+  await loadRootCategories()
+}
+
+async function onSearch() {
+  searchActive.value = true
+  loading.value = true
+  try {
+    const { page } = await listProductResource('category', {
+      page: 1,
+      limit: 1000,
+      name: query.name,
+      showStatus: query.showStatus,
+      catLevel: query.catLevel
+    })
+    tree.value = sortById(page?.list || [])
+  } finally {
+    loading.value = false
+  }
+}
+
+async function onResetSearch() {
+  query.name = ''
+  query.showStatus = ''
+  query.catLevel = ''
+  await loadRootCategories()
 }
 
 async function loadChildren(row, treeNode, resolve) {
@@ -360,7 +429,7 @@ async function onSubmit() {
       ElMessage.success('新增成功')
     }
     formVisible.value = false
-    loadRootCategories()
+    reloadCategories()
   } finally {
     submitting.value = false
   }
@@ -370,7 +439,7 @@ async function onDelete(row) {
   await ElMessageBox.confirm(`确认删除分类 [${row.name}] 吗？`, '提示', { type: 'warning' })
   await deleteProductResource('category', [row.catId])
   ElMessage.success('删除成功')
-  loadRootCategories()
+  reloadCategories()
 }
 
 async function onBatchDelete() {
@@ -382,7 +451,7 @@ async function onBatchDelete() {
     selection.value.map((row) => row.catId)
   )
   ElMessage.success('删除成功')
-  loadRootCategories()
+  reloadCategories()
 }
 
 onMounted(loadRootCategories)
@@ -416,6 +485,20 @@ onMounted(loadRootCategories)
   width: 100%;
 }
 
+.search-form {
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #eaf0f8;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(47, 125, 246, 0.07), rgba(22, 160, 133, 0.05)),
+    #f9fbff;
+}
+
+.search-control {
+  width: 210px;
+}
+
 .category-panel {
   width: 100%;
   max-width: calc(90vw - 48px);
@@ -427,7 +510,7 @@ onMounted(loadRootCategories)
   justify-content: flex-end;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid #e6edf7;
   margin-top: 12px;
 }
 

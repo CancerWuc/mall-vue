@@ -4,8 +4,8 @@
       :default-active="activeMenu"
       :collapse="collapse"
       :unique-opened="true"
-      background-color="#001529"
-      text-color="#bfcbd9"
+      background-color="transparent"
+      text-color="#c8d3df"
       active-text-color="#ffffff"
       router
     >
@@ -45,8 +45,48 @@ const routes = computed(() => {
 <style scoped>
 .sidebar-scroll {
   height: calc(100vh - 56px);
+  padding: 10px 10px 14px;
 }
 :deep(.el-menu) {
   border-right: 0;
+  background: transparent;
+}
+
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
+  height: 46px;
+  line-height: 46px;
+  margin: 4px 0;
+  border-radius: 8px;
+  color: #c8d3df;
+}
+
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+:deep(.el-menu-item.is-active) {
+  background: linear-gradient(135deg, #2f7df6, #16a085);
+  box-shadow: 0 10px 22px rgba(47, 125, 246, 0.24);
+  color: #fff;
+}
+
+:deep(.el-menu--collapse .el-menu-item),
+:deep(.el-menu--collapse .el-sub-menu__title) {
+  justify-content: center;
+}
+
+:deep(.el-sub-menu .el-menu) {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+:deep(.el-sub-menu .el-menu-item) {
+  min-width: 0;
+  height: 40px;
+  line-height: 40px;
 }
 </style>

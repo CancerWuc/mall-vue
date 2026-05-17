@@ -27,8 +27,19 @@ const items = computed(() => {
   height: 38px;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.76);
+  border-bottom: 1px solid rgba(230, 237, 247, 0.9);
+  backdrop-filter: blur(14px);
+}
+
+:deep(.el-breadcrumb__inner),
+:deep(.el-breadcrumb__separator) {
+  color: #8a96a8;
+  font-weight: 500;
+}
+
+:deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+  color: #526071;
 }
 </style>

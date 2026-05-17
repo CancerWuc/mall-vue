@@ -138,23 +138,47 @@ async function handleCommand(cmd) {
   align-items: center;
   justify-content: space-between;
   height: 56px;
-  padding: 0 16px;
+  padding: 0 18px;
 }
+.left :deep(.el-button),
+.right :deep(.el-button) {
+  width: 34px;
+  height: 34px;
+  color: #526071;
+}
+
+.left :deep(.el-button:hover),
+.right :deep(.el-button:hover) {
+  color: #2f7df6;
+  background: #eef5ff;
+}
+
 .right {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 .user-area {
   display: inline-flex;
   align-items: center;
   cursor: pointer;
-  gap: 6px;
-  padding: 0 8px;
-  height: 100%;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px 0 6px;
+  border: 1px solid #e6edf7;
+  border-radius: 8px;
+  background: #fff;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.user-area:hover {
+  border-color: rgba(47, 125, 246, 0.38);
+  box-shadow: 0 8px 18px rgba(36, 62, 99, 0.08);
 }
 .username {
   font-size: 14px;
-  color: #303133;
+  color: #1f2937;
+  font-weight: 500;
 }
 </style>

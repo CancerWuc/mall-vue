@@ -19,6 +19,131 @@
         </div>
       </div>
 
+      <el-form
+        v-if="searchFields.length"
+        class="search-form"
+        :inline="true"
+        :model="query"
+        @submit.prevent
+      >
+        <el-form-item v-for="item in searchFields" :key="item.prop" :label="item.label">
+          <el-input-number
+            v-if="item.type === 'number'"
+            v-model="query[item.prop]"
+            :min="item.min"
+            :precision="item.precision"
+            controls-position="right"
+            class="search-number"
+          />
+          <el-select
+            v-else-if="item.type === 'select'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || `请选择${item.label}`"
+          >
+            <el-option
+              v-for="option in item.options"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'brand'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择品牌'"
+          >
+            <el-option
+              v-for="brand in brandOptions"
+              :key="brand.brandId"
+              :label="brand.name"
+              :value="brand.brandId"
+            />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'spu'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择 SPU'"
+          >
+            <el-option v-for="spu in spuOptions" :key="spu.id" :label="spu.spuName" :value="spu.id" />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'attr'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择属性'"
+          >
+            <el-option
+              v-for="attr in attrOptions"
+              :key="attr.attrId"
+              :label="attr.attrName"
+              :value="attr.attrId"
+            />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'attrgroup'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择分组'"
+          >
+            <el-option
+              v-for="group in attrGroupOptions"
+              :key="group.attrGroupId"
+              :label="group.attrGroupName"
+              :value="group.attrGroupId"
+            />
+          </el-select>
+          <el-select
+            v-else-if="item.type === 'sku'"
+            v-model="query[item.prop]"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择 SKU'"
+          >
+            <el-option v-for="sku in skuOptions" :key="sku.skuId" :label="sku.skuName" :value="sku.skuId" />
+          </el-select>
+          <el-cascader
+            v-else-if="item.type === 'category'"
+            v-model="query[item.prop]"
+            :options="categoryOptions"
+            :props="categoryProps"
+            clearable
+            filterable
+            class="search-control"
+            :placeholder="item.placeholder || '请选择分类'"
+          />
+          <el-input
+            v-else
+            v-model="query[item.prop]"
+            clearable
+            class="search-control"
+            :placeholder="item.placeholder || `请输入${item.label}`"
+            @keyup.enter="onSearch"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSearch">
+            <el-icon><Search /></el-icon>查询
+          </el-button>
+          <el-button @click="onResetSearch">
+            <el-icon><RefreshLeft /></el-icon>重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+
       <el-table
         v-loading="loading"
         :data="list"
@@ -159,12 +284,14 @@
               clearable
               filterable
               class="full-control"
+              :loading="item.useUnrelatedAttrs && unrelatedAttrsLoading"
               :disabled="isFieldDisabled(item)"
-              :placeholder="item.placeholder || '请选择属性'"
+              :placeholder="attrPlaceholder(item)"
+              :no-data-text="attrNoDataText(item)"
               @change="(value) => onAttrChange(item, value)"
             >
               <el-option
-                v-for="attr in attrOptions"
+                v-for="attr in attrSelectOptions(item)"
                 :key="attr.attrId"
                 :label="attr.attrName"
                 :value="attr.attrId"
@@ -299,7 +426,7 @@ import Pagination from '@/components/Pagination/index.vue'
 import { productConfigs } from './configs'
 import { wareConfigs } from '@/views/inventory/configs'
 import { uploadOss } from '@/api/oss'
-import { listCategoryTree } from '@/api/product'
+import { listCategoryTree, listUnrelatedAttrs } from '@/api/product'
 import { deleteResource, getResource, listResource, saveResource, updateResource } from '@/api/resource'
 
 const route = useRoute()
@@ -311,6 +438,7 @@ const moduleKey = computed(() => route.meta.moduleKey || 'product')
 const resourceKey = computed(() => route.meta.resourceKey || route.meta.productKey || 'category')
 const config = computed(() => configGroups[moduleKey.value]?.[resourceKey.value] || productConfigs.category)
 const apiBase = computed(() => route.meta.apiBase || config.value.apiBase || moduleKey.value)
+const searchFields = computed(() => config.value.searchFields || [])
 const loading = ref(false)
 const list = ref([])
 const total = ref(0)
@@ -328,6 +456,8 @@ const categoryOptions = ref([])
 const brandOptions = ref([])
 const spuOptions = ref([])
 const attrOptions = ref([])
+const unrelatedAttrOptions = ref([])
+const unrelatedAttrsLoading = ref(false)
 const attrGroupOptions = ref([])
 const skuOptions = ref([])
 const categoryPickerVisible = reactive({})
@@ -357,14 +487,17 @@ const rules = computed(() =>
 
 watch(
   () => [route.meta.moduleKey, route.meta.resourceKey, route.meta.productKey],
-  () => {
+  async () => {
     query.page = 1
     selection.value = []
-    loadList()
+    resetSearchQuery()
+    await ensureSearchOptions()
+    await loadList()
   }
 )
 
 async function loadList() {
+  syncSearchQuery()
   loading.value = true
   try {
     const { page } = await listResource(apiBase.value, config.value.resource, query)
@@ -385,6 +518,17 @@ function openForm(id = null) {
   formVisible.value = true
 }
 
+async function onSearch() {
+  query.page = 1
+  await loadList()
+}
+
+async function onResetSearch() {
+  resetSearchQuery()
+  query.page = 1
+  await loadList()
+}
+
 async function onOpen() {
   resetForm()
   await ensureCategoryOptions()
@@ -399,6 +543,7 @@ async function onOpen() {
     try {
       const res = await getResource(apiBase.value, config.value.resource, editingId.value)
       Object.assign(form, res[config.value.infoKey] || {})
+      await loadUnrelatedAttrsForForm(form.attrId)
     } finally {
       formLoading.value = false
     }
@@ -406,7 +551,7 @@ async function onOpen() {
 }
 
 async function ensureCategoryOptions() {
-  if (!config.value.formFields.some((item) => item.type === 'category')) {
+  if (!hasFieldType('category')) {
     return
   }
   if (categoryOptions.value.length) {
@@ -418,7 +563,7 @@ async function ensureCategoryOptions() {
 }
 
 async function ensureBrandOptions() {
-  if (!config.value.formFields.some((item) => item.type === 'brand')) {
+  if (!hasFieldType('brand')) {
     return
   }
   if (brandOptions.value.length) {
@@ -432,7 +577,7 @@ async function ensureBrandOptions() {
 }
 
 async function ensureSpuOptions() {
-  if (!config.value.formFields.some((item) => item.type === 'spu')) {
+  if (!hasFieldType('spu')) {
     return
   }
   if (spuOptions.value.length) {
@@ -444,7 +589,8 @@ async function ensureSpuOptions() {
 }
 
 async function ensureAttrOptions() {
-  if (!config.value.formFields.some((item) => item.type === 'attr')) {
+  const attrFields = allFields().filter((item) => item.type === 'attr')
+  if (!attrFields.length || attrFields.every((item) => item.useUnrelatedAttrs)) {
     return
   }
   if (attrOptions.value.length) {
@@ -458,7 +604,7 @@ async function ensureAttrOptions() {
 }
 
 async function ensureAttrGroupOptions() {
-  if (!config.value.formFields.some((item) => item.type === 'attrgroup')) {
+  if (!hasFieldType('attrgroup')) {
     return
   }
   if (attrGroupOptions.value.length) {
@@ -472,7 +618,7 @@ async function ensureAttrGroupOptions() {
 }
 
 async function ensureSkuOptions() {
-  if (!config.value.formFields.some((item) => item.type === 'sku')) {
+  if (!hasFieldType('sku')) {
     return
   }
   if (skuOptions.value.length) {
@@ -496,6 +642,40 @@ function normalizeCategoryOptions(categories) {
     }
     return option
   })
+}
+
+function allFields() {
+  return [...(config.value.formFields || []), ...searchFields.value]
+}
+
+function hasFieldType(type) {
+  return allFields().some((item) => item.type === type)
+}
+
+async function ensureSearchOptions() {
+  await ensureCategoryOptions()
+  await ensureBrandOptions()
+  await ensureSpuOptions()
+  await ensureAttrOptions()
+  await ensureAttrGroupOptions()
+  await ensureSkuOptions()
+}
+
+function syncSearchQuery() {
+  searchFields.value.forEach((item) => {
+    if (typeof query[item.prop] === 'undefined') {
+      query[item.prop] = item.defaultValue ?? ''
+    }
+  })
+}
+
+function resetSearchQuery() {
+  Object.keys(query).forEach((key) => {
+    if (!['page', 'limit'].includes(key)) {
+      delete query[key]
+    }
+  })
+  syncSearchQuery()
 }
 
 function openCategoryPicker(prop) {
@@ -552,16 +732,26 @@ function onAttrChange(item, value) {
   if (!item.nameProp) {
     return
   }
-  const attr = attrOptions.value.find((option) => option.attrId === value)
+  const attr = attrSelectOptions(item).find((option) => option.attrId === value)
   form[item.nameProp] = attr?.attrName || ''
 }
 
-function onAttrGroupChange(item, value) {
+async function onAttrGroupChange(item, value, options = {}) {
+  const { clear = true, reload = true } = options
   if (!item.nameProp) {
-    return
+    if (clear) {
+      clearFields(item.clearFields)
+    }
+  } else {
+    const group = attrGroupOptions.value.find((option) => option.attrGroupId === value)
+    form[item.nameProp] = group?.attrGroupName || ''
+    if (clear) {
+      clearFields(item.clearFields)
+    }
   }
-  const group = attrGroupOptions.value.find((option) => option.attrGroupId === value)
-  form[item.nameProp] = group?.attrGroupName || ''
+  if (reload && item.reloadUnrelatedAttrs) {
+    await loadUnrelatedAttrs(value)
+  }
 }
 
 function onSkuChange(item, value) {
@@ -584,7 +774,7 @@ function fillDerivedFormValues() {
       onAttrChange(item, form[item.prop])
     }
     if (item.type === 'attrgroup') {
-      onAttrGroupChange(item, form[item.prop])
+      onAttrGroupChange(item, form[item.prop], { clear: false, reload: false })
     }
     if (item.type === 'sku') {
       onSkuChange(item, form[item.prop])
@@ -601,6 +791,58 @@ function fillDerivedFormValues() {
 function applyLinkedFields(item, source) {
   Object.entries(item.linkedFields || {}).forEach(([targetProp, sourceProp]) => {
     form[targetProp] = source?.[sourceProp] ?? null
+  })
+}
+
+function attrSelectOptions(item) {
+  return item.useUnrelatedAttrs ? unrelatedAttrOptions.value : attrOptions.value
+}
+
+function attrPlaceholder(item) {
+  if (item.useUnrelatedAttrs && item.dependsOn && !form[item.dependsOn]) {
+    return item.placeholder || '请先选择分组名称'
+  }
+  return item.readyPlaceholder || '请选择属性'
+}
+
+function attrNoDataText(item) {
+  if (!item.useUnrelatedAttrs) {
+    return '无数据'
+  }
+  if (item.dependsOn && !form[item.dependsOn]) {
+    return '请先选择分组名称'
+  }
+  return '暂无未绑定属性'
+}
+
+async function loadUnrelatedAttrsForForm(keepAttrId = null) {
+  const field = config.value.formFields.find((item) => item.useUnrelatedAttrs)
+  if (!field) {
+    return
+  }
+  await loadUnrelatedAttrs(form[field.dependsOn], keepAttrId)
+}
+
+async function loadUnrelatedAttrs(attrGroupId, keepAttrId = null) {
+  unrelatedAttrOptions.value = []
+  if (!attrGroupId) {
+    return
+  }
+
+  unrelatedAttrsLoading.value = true
+  try {
+    const { attrs } = await listUnrelatedAttrs(attrGroupId, keepAttrId)
+    unrelatedAttrOptions.value = [...(attrs || [])].sort(
+      (a, b) => Number(a.attrId || 0) - Number(b.attrId || 0)
+    )
+  } finally {
+    unrelatedAttrsLoading.value = false
+  }
+}
+
+function clearFields(fields = []) {
+  fields.forEach((field) => {
+    form[field] = null
   })
 }
 
@@ -639,6 +881,7 @@ function resetForm() {
     form[item.prop] = item.defaultValue ?? null
   })
   uploadingField.value = ''
+  unrelatedAttrOptions.value = []
   Object.keys(categoryPickerVisible).forEach((key) => {
     categoryPickerVisible[key] = false
   })
@@ -738,7 +981,11 @@ function formatValue(value) {
   return value
 }
 
-onMounted(loadList)
+onMounted(async () => {
+  syncSearchQuery()
+  await ensureSearchOptions()
+  await loadList()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -762,8 +1009,9 @@ onMounted(loadList)
 .table-image {
   width: 54px;
   height: 54px;
-  border-radius: 4px;
-  background: #f5f7fa;
+  border-radius: 8px;
+  background: #f5f7fb;
+  border: 1px solid #e6edf7;
 }
 
 .form-grid {
@@ -780,6 +1028,24 @@ onMounted(loadList)
   width: 100%;
 }
 
+.search-form {
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #eaf0f8;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(47, 125, 246, 0.07), rgba(22, 160, 133, 0.05)),
+    #f9fbff;
+}
+
+.search-control {
+  width: 210px;
+}
+
+.search-number {
+  width: 180px;
+}
+
 .image-field-preview {
   width: 100%;
   margin-top: 10px;
@@ -788,9 +1054,9 @@ onMounted(loadList)
 .preview-image {
   width: 96px;
   height: 96px;
-  border-radius: 6px;
-  background: #f5f7fa;
-  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  background: #f5f7fb;
+  border: 1px solid #e6edf7;
 }
 
 .category-panel {
@@ -804,7 +1070,7 @@ onMounted(loadList)
   justify-content: flex-end;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid #e6edf7;
   margin-top: 12px;
 }
 

@@ -12,6 +12,14 @@ export function listCategoryChildren(parentCid = 0) {
   return request({ url: '/product/category/list/children', method: 'get', params: { parentCid } })
 }
 
+export function listUnrelatedAttrs(attrGroupId, keepAttrId = null) {
+  return request({
+    url: '/product/attrattrgrouprelation/unrelatedAttrs',
+    method: 'get',
+    params: { attrGroupId, keepAttrId }
+  })
+}
+
 export function getProductResource(resource, id) {
   return request({ url: `/product/${resource}/info/${id}`, method: 'get' })
 }
